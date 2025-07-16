@@ -21,6 +21,7 @@ module ibex_ex_block #(
   input  logic [31:0]           alu_operand_a_i,
   input  logic [31:0]           alu_operand_b_i,
   input  logic                  alu_instr_first_cycle_i,
+  input  logic                  use_se_alu,      // ALU selector
 
   // Branch Target ALU
   // All of these signals are unusued when BranchTargetALU == 0
@@ -67,6 +68,37 @@ module ibex_ex_block #(
   logic [ 1:0] alu_imd_val_we;
   logic [33:0] multdiv_imd_val_d[2];
   logic [ 1:0] multdiv_imd_val_we;
+  
+  // SE ALU signals
+
+  logic [ 1:0] se_alu_imd_val_we;
+  logic [31:0] se_alu_imd_val_d[2];
+  logic [31:0] se_alu_adder_result_ex_o;
+  logic [33:0] se_alu_adder_result_ext;
+  logic [31:0] se_alu_result;
+  logic se_alu_cmp_result;
+  logic se_alu_is_equal_result;
+
+  // Normal ALU signals
+
+  logic [ 1:0] norm_alu_imd_val_we;
+  logic [31:0] norm_alu_imd_val_d[2];
+  logic [31:0] norm_alu_adder_result_ex_o;
+  logic [33:0] norm_alu_adder_result_ext;
+  logic [31:0] norm_alu_result;
+  logic norm_alu_cmp_result;
+  logic norm_alu_is_equal_result;
+
+  // Assign EX stage signals to appropriate ALU or SE signals
+
+  assign alu_imd_val_we         = use_se_alu ? se_alu_imd_val_we : norm_alu_imd_val_we;
+  assign alu_imd_val_d[0]       = use_se_alu ? se_alu_imd_val_d[0] : norm_alu_imd_val_d[0];
+  assign alu_imd_val_d[1]       = use_se_alu ? se_alu_imd_val_d[1] : norm_alu_imd_val_d[1];
+  assign alu_adder_result_ex_o  = use_se_alu ? se_alu_adder_result_ex_o : norm_alu_adder_result_ex_o;
+  assign alu_adder_result_ext   = use_se_alu ? se_alu_adder_result_ext : norm_alu_adder_result_ext;
+  assign alu_result             = use_se_alu ? se_alu_result : norm_alu_result;
+  assign alu_cmp_result         = use_se_alu ? se_alu_cmp_result : norm_alu_cmp_result;
+  assign alu_is_equal_result    = use_se_alu ? se_alu_is_equal_result : norm_alu_is_equal_result;
 
   /*
     The multdiv_i output is never selected if RV32M=RV32MNone
@@ -108,6 +140,30 @@ module ibex_ex_block #(
 
     assign branch_target_o = alu_adder_result_ex_o;
   end
+  
+  ////////////
+  // SE ALU //
+  ////////////
+
+  ibex_se_alu #(
+    .RV32B(RV32B)
+  ) se_alu_i (
+    .operator_i            (alu_operator_i),
+    .operand_a_i           (alu_operand_a_i),
+    .operand_b_i           (alu_operand_b_i),
+    .instr_first_cycle_i   (alu_instr_first_cycle_i),
+    .imd_val_q_i           (alu_imd_val_q),
+    .se_imd_val_we_o       (se_alu_imd_val_we),
+    .se_imd_val_d_o        (se_alu_imd_val_d),
+    .multdiv_operand_a_i   (multdiv_alu_operand_a),
+    .multdiv_operand_b_i   (multdiv_alu_operand_b),
+    .multdiv_sel_i         (multdiv_sel),
+    .se_adder_result_o     (se_alu_adder_result_ex_o),
+    .se_adder_result_ext_o (se_alu_adder_result_ext),
+    .se_result_o           (se_alu_result),
+    .se_comparison_result_o(se_alu_cmp_result),
+    .se_is_equal_result_o  (se_alu_is_equal_result)
+  );
 
   /////////
   // ALU //
@@ -121,16 +177,16 @@ module ibex_ex_block #(
     .operand_b_i        (alu_operand_b_i),
     .instr_first_cycle_i(alu_instr_first_cycle_i),
     .imd_val_q_i        (alu_imd_val_q),
-    .imd_val_we_o       (alu_imd_val_we),
-    .imd_val_d_o        (alu_imd_val_d),
+    .imd_val_we_o       (norm_alu_imd_val_we),
+    .imd_val_d_o        (norm_alu_imd_val_d),
     .multdiv_operand_a_i(multdiv_alu_operand_a),
     .multdiv_operand_b_i(multdiv_alu_operand_b),
     .multdiv_sel_i      (multdiv_sel),
-    .adder_result_o     (alu_adder_result_ex_o),
-    .adder_result_ext_o (alu_adder_result_ext),
-    .result_o           (alu_result),
-    .comparison_result_o(alu_cmp_result),
-    .is_equal_result_o  (alu_is_equal_result)
+    .adder_result_o     (norm_alu_adder_result_ex_o),
+    .adder_result_ext_o (norm_alu_adder_result_ext),
+    .result_o           (norm_alu_result),
+    .comparison_result_o(norm_alu_cmp_result),
+    .is_equal_result_o  (norm_alu_is_equal_result)
   );
 
   ////////////////

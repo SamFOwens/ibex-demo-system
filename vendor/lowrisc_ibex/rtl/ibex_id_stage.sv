@@ -71,6 +71,7 @@ module ibex_id_stage #(
   output ibex_pkg::alu_op_e         alu_operator_ex_o,
   output logic [31:0]               alu_operand_a_ex_o,
   output logic [31:0]               alu_operand_b_ex_o,
+  output logic                      use_se_alu,
 
   // Multicycle Operation Stage Register
   input  logic [1:0]                imd_val_we_ex_i,
@@ -487,6 +488,7 @@ module ibex_id_stage #(
     .alu_op_a_mux_sel_o(alu_op_a_mux_sel_dec),
     .alu_op_b_mux_sel_o(alu_op_b_mux_sel_dec),
     .alu_multicycle_o  (alu_multicycle_dec),
+    .use_se_alu        (use_se_alu),
 
     // MULT & DIV
     .mult_en_o            (mult_en_dec),

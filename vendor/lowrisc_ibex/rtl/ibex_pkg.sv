@@ -67,9 +67,45 @@ package ibex_pkg;
     OPCODE_BRANCH   = 7'h63,
     OPCODE_JALR     = 7'h67,
     OPCODE_JAL      = 7'h6f,
-    OPCODE_SYSTEM   = 7'h73
+    OPCODE_SYSTEM   = 7'h73,
+    OPCODE_SE_OP_IMM  = 7'b0001011, // custom-0 (hex is 7'h0b)
+    OPCODE_SE_CMOV    = 7'b0101011, // custom-1 (hex is 7'h2b)
+    OPCODE_SE_OP      = 7'b1011011,  // custom-2 (hex is 7'h5b)
+    OPCODE_SE_KEYEXPAND = 7'b1111011 // custom-3 (hex is 7'h7b)
   } opcode_e;
+  
+  //////////////////////////////
+  // Encrypted ALU operations //
+  //////////////////////////////
 
+  typedef enum logic [6:0] {
+
+    // Key Expansion
+    ENC_KEYEXPAND,
+
+    // Arithmetic
+    ENC_ADD,
+    ENC_SUB,
+
+    // Logic
+    ENC_XOR,
+    ENC_OR,
+    ENC_AND,
+
+    // Shifts
+    ENC_SRA,
+    ENC_SRL,
+    ENC_SLL,
+
+    // Set lower than
+    ENC_SLT,
+    ENC_SLTU,
+
+    // Ternary Bitmanip Operations
+    // RV32B
+    ENC_CMOV // Perhaps should only be included in B extension?
+
+  } enc_alu_op_e;
 
   ////////////////////
   // ALU operations //

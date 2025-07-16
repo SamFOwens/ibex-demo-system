@@ -70,6 +70,8 @@ module ibex_decoder #(
   output ibex_pkg::op_b_sel_e  alu_op_b_mux_sel_o,    // operand b selection: reg value or
                                                       // immediate
   output logic                 alu_multicycle_o,      // ternary bitmanip instruction
+  
+  output logic                 use_se_alu,      // chooses between se and normal alu
 
   // MULT & DIV
   output logic                 mult_en_o,             // perform integer multiplication
@@ -337,6 +339,83 @@ module ibex_decoder #(
           end
         endcase
       end
+      
+      ////////////
+      // SE ALU //
+      ////////////
+
+      OPCODE_SE_OP_IMM: begin // Register-Immediate Operations in Encrypted ALU
+
+        // Enable read from rs1 and write to rd
+        rf_ren_a_o       = 1'b1;
+        rf_we            = 1'b1;
+
+        // Decides if the funct3 field is in use
+        unique case (instr[14:12])
+          3'b000,                       // addi
+          3'b010,                       // slti
+          3'b011,                       // sltiu
+          3'b100,                       // xori
+          3'b110,                       // ori
+          3'b111: illegal_insn = 1'b0;  // andi
+
+          3'b001: begin
+            unique case (instr[31:25])
+              7'b000_0000: illegal_insn = 1'b0; // slli
+              default: illegal_insn = 1'b1;
+            endcase
+          end
+
+          3'b101: begin
+            unique case (instr[31:25])
+              7'b000_0000: illegal_insn = 1'b0; // srli
+              7'b010_0000: illegal_insn = 1'b0; // srai
+              default: illegal_insn = 1'b1;
+            endcase
+          end
+
+          default: illegal_insn = 1'b1;
+        endcase
+      end
+
+      OPCODE_SE_CMOV: begin // Encrypted CMOV
+
+        // Enable read from rs1, rs2, and rs3 and write to rd
+        rf_ren_a_o      = 1'b1;
+        rf_ren_b_o      = 1'b1;
+        rf_we           = 1'b1;
+
+        // Just check for cmov
+        if ({instr[26], instr[13:12]} == {1'b1, 2'b01}) begin
+          illegal_insn =  1'b0; // cmov (can also check for RV32B if decide to only include in ext.)
+        end
+      end
+
+      OPCODE_SE_OP: begin // Register-Register Ops in Encrypted ALU
+        rf_ren_a_o      = 1'b1;
+        rf_ren_b_o      = 1'b1;
+        rf_we           = 1'b1;
+          unique case ({instr[31:25], instr[14:12]})
+            // RV32I ALU operations
+            {7'b000_0000, 3'b000},                        // add
+            {7'b010_0000, 3'b000},                        // sub
+            {7'b000_0000, 3'b010},                        // slt
+            {7'b000_0000, 3'b011},                        // sltu
+            {7'b000_0000, 3'b100},                        // xor
+            {7'b000_0000, 3'b110},                        // or
+            {7'b000_0000, 3'b111},                        // and
+            {7'b000_0000, 3'b001},                        // sll
+            {7'b000_0000, 3'b101},                        // srl
+            {7'b010_0000, 3'b101}: illegal_insn = 1'b0;   // sra
+
+            default: illegal_insn = 1'b1;
+          endcase
+        end
+
+        OPCODE_SE_KEYEXPAND: begin // Key Expand Op for Decrypt Module
+          // Only internal flop writing is required;
+          illegal_insn = 1'b0; // Since this is the only op in this opcode, I'm just assuming it'll always be keyexpand
+        end
 
       /////////
       // ALU //
@@ -684,6 +763,9 @@ module ibex_decoder #(
 
 
     opcode_alu         = opcode_e'(instr_alu[6:0]);
+    
+    use_se_alu   = 1'b0;
+
 
     use_rs3_d          = 1'b0;
     alu_multicycle_o   = 1'b0;
@@ -798,6 +880,90 @@ module ibex_decoder #(
         alu_op_b_mux_sel_o  = OP_B_IMM;
         imm_b_mux_sel_o     = IMM_B_I;
       end
+      
+      ////////////
+      // SE ALU //
+      ////////////
+
+      OPCODE_SE_OP_IMM: begin
+        alu_op_a_mux_sel_o  = OP_A_REG_A;
+        alu_op_b_mux_sel_o  = OP_B_IMM;
+        imm_b_mux_sel_o     = IMM_B_I;
+        use_se_alu          =  1'b1;
+        alu_multicycle_o    =  1'b1;
+
+        unique case (instr_alu[14:12])
+          3'b000: alu_operator_o = ENC_ADD;  // Add Immediate
+          3'b010: alu_operator_o = ENC_SLT;  // Set to one if Lower than Immediate
+          3'b011: alu_operator_o = ENC_SLTU; // Set to one if Lower than Immediate Unsigned
+          3'b100: alu_operator_o = ENC_XOR;  // Exclusive Or with Immediate
+          3'b110: alu_operator_o = ENC_OR;   // Or with Immediate
+          3'b111: alu_operator_o = ENC_AND;  // And with Immediate
+
+          3'b001: begin
+            if (instr_alu[31:25] == 7'b000_0000) begin
+              alu_operator_o = ENC_SLL;
+            end
+          end
+
+          3'b101: begin
+            if (instr_alu[31:25] == 7'b000_0000) begin
+              alu_operator_o = ENC_SRL;
+            end else if (instr_alu[31:25] == 7'b010_0000) begin
+              alu_operator_o = ENC_SRA;
+            end
+          end
+
+
+          default: ;
+        endcase
+      end
+
+      OPCODE_SE_CMOV: begin
+        alu_op_a_mux_sel_o = OP_A_REG_A;
+        alu_op_b_mux_sel_o = OP_B_REG_B;
+        use_se_alu         = 1'b1;
+
+        if ({instr_alu[26:25],instr_alu[14:12]} == {2'b11, 3'b101}) begin
+          alu_operator_o   = ENC_CMOV;
+          alu_multicycle_o = 1'b1;
+          if (instr_first_cycle_i) begin
+            use_rs3_d = 1'b1;
+          end else begin
+            use_rs3_d = 1'b0;
+          end
+        end
+      end
+
+      OPCODE_SE_OP: begin
+        alu_op_a_mux_sel_o = OP_A_REG_A;
+        alu_op_b_mux_sel_o = OP_B_REG_B;
+        use_se_alu         = 1'b1;
+        alu_multicycle_o   = 1'b1;
+
+         unique case ({instr_alu[31:25], instr_alu[14:12]})
+            // RV32I ALU operations
+            {7'b000_0000, 3'b000}: alu_operator_o = ENC_ADD;   // Add
+            {7'b010_0000, 3'b000}: alu_operator_o = ENC_SUB;   // Sub
+            {7'b000_0000, 3'b010}: alu_operator_o = ENC_SLT;   // Set Lower Than
+            {7'b000_0000, 3'b011}: alu_operator_o = ENC_SLTU;  // Set Lower Than Unsigned
+            {7'b000_0000, 3'b100}: alu_operator_o = ENC_XOR;   // Xor
+            {7'b000_0000, 3'b110}: alu_operator_o = ENC_OR;    // Or
+            {7'b000_0000, 3'b111}: alu_operator_o = ENC_AND;   // And
+            {7'b000_0000, 3'b001}: alu_operator_o = ENC_SLL;   // Shift Left Logical
+            {7'b000_0000, 3'b101}: alu_operator_o = ENC_SRL;   // Shift Right Logical
+            {7'b010_0000, 3'b101}: alu_operator_o = ENC_SRA;   // Shift Right Arithmetic
+
+            default: ;
+          endcase
+        end
+
+        OPCODE_SE_KEYEXPAND: begin // Key Expand Op for Decrypt Module
+          // No args
+          use_se_alu         = 1'b1; // Has to be sent to the SE Decrypt Module which essentially wraps the SE ALU
+          alu_multicycle_o   = 1'b1; // Multicycle for pipelined implementation
+          alu_operator_o = ENC_KEYEXPAND; // Key Expand Op, doesn't actually get sent to the ALU, it's intercepted by the Decrypt Module
+        end
 
       /////////
       // ALU //
