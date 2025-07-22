@@ -144,6 +144,36 @@ module ibex_ex_block #(
   ////////////
   // SE ALU //
   ////////////
+  
+  ibex_decrypt #(
+    .RV32B(RV32B)
+  ) decrypt_i (
+    .operator_i            (alu_operator_i),
+    .operand_a_i           (alu_operand_a_i),
+    .operand_b_i           (alu_operand_b_i),
+    .instr_first_cycle_i   (alu_instr_first_cycle_i),
+    .imd_val_q_i           (alu_imd_val_q),
+    .se_imd_val_we_o       (se_alu_imd_val_we),
+    .se_imd_val_d_o        (se_alu_imd_val_d),
+    .multdiv_operand_a_i   (multdiv_alu_operand_a),
+    .multdiv_operand_b_i   (multdiv_alu_operand_b),
+    .multdiv_sel_i         (multdiv_sel),
+    .se_adder_result_o     (se_alu_adder_result_ex_o),
+    .se_adder_result_ext_o (se_alu_adder_result_ext),
+    .se_result_o           (se_alu_result),
+    .se_comparison_result_o(se_alu_cmp_result),
+    .se_is_equal_result_o  (se_alu_is_equal_result),
+    .clk_i		   (clk_i),                      // system clock signal
+    .rst_ni		   (rst_ni),                      // system reset signal, asserted high
+    //.op_i		   (),                      // INPUT: crypto operation to execute
+    //.key_valid_i	   (),          	    // INPUT: assert this signal to transfer a key value to the SIMON core
+    //.key_i		   (), 		       	    // INPUT: SIMON key to expand
+    //.data_valid_i	   (use_se_alu),      	            // INPUT: assert this signal to transfer a data value to the SIMON core
+    //.data_i		   (),    		    // INPUT: SIMON data input
+    .data_valid_o	   (),       	            // OUTPUT: this signal is asserted to indicate that an output valid is available
+    .data_o		   (),    		    // OUTPUT: SIMON core data output
+    //.ready_o   		   ()
+  );
 
   ibex_se_alu #(
     .RV32B(RV32B)

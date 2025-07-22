@@ -106,6 +106,20 @@ package ibex_pkg;
     ENC_CMOV // Perhaps should only be included in B extension?
 
   } enc_alu_op_e;
+  
+  ////////////////////////////////
+  // Decryption Unit Operations //
+  ////////////////////////////////
+  
+  // these are the crypto opterations that the SIMON_CORE module supports
+  typedef enum logic [2:0] {
+    SIMON_IDLE       = 3'b000,
+    SIMON_KEYEXPAND  = 3'b001,
+    SIMON_ENCRYPT    = 3'b010,
+    SIMON_DECRYPT    = 3'b011,
+    SIMON_ENCRYPT_CL = 3'b100,
+    SIMON_DECRYPT_CL = 3'b101
+  } simon_op_e;
 
   ////////////////////
   // ALU operations //
