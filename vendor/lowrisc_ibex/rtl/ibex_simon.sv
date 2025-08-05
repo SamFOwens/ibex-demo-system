@@ -18,7 +18,7 @@ module simon_core #(
 ) (
     input  logic        clk,                      // system clock signal
     input  logic        rst,                      // system reset signal, asserted high
-    input  simon_op_e   op_i,                     // INPUT: crypto operation to execute
+    input  ibex_pkg::simon_op_e   op_i,                     // INPUT: crypto operation to execute
     input  logic        key_valid_i,              // INPUT: assert this signal to transfer a key value to the SIMON core
     input  logic [7:0]  key_i [0:(SIMON_KEY_W/8)-1], // INPUT: SIMON key to expand
     input  logic        data_valid_i,             // INPUT: assert this signal to transfer a data value to the SIMON core
@@ -28,6 +28,8 @@ module simon_core #(
     output logic        ready_o                   // OUTPUT: asserted when the SIMON core is ready for a new request
 
 );
+  import ibex_pkg::*;
+
   logic [(SIMON_DATA_W/2)-1:0] keytab[0:SIMON_ROUNDS - 1];
   logic keytab_valid_o, enc_valid_o, dec_valid_o;
   logic keyexpand_ready_o, enc_ready_o, dec_ready_o;

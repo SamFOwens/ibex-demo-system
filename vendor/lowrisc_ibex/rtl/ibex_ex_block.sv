@@ -149,6 +149,7 @@ module ibex_ex_block #(
   ibex_decrypt #(
     .RV32B(RV32B)
   ) decrypt_i (
+    .use_se_alu_i	   (use_se_alu_i),
     .operator_i            (alu_operator_i),
     .operand_a_i           (alu_operand_a_i),
     .operand_b_i           (alu_operand_b_i),
@@ -167,14 +168,6 @@ module ibex_ex_block #(
     .op_b_is_imm_i	   (op_b_is_imm_i)
     .clk_i		   (clk_i),                      // system clock signal
     .rst_ni		   (rst_ni),                      // system reset signal, asserted high
-    //.op_i		   (),                      // INPUT: crypto operation to execute
-    //.key_valid_i	   (),          	    // INPUT: assert this signal to transfer a key value to the SIMON core
-    //.key_i		   (), 		       	    // INPUT: SIMON key to expand
-    //.data_valid_i	   (use_se_alu_i),      	            // INPUT: assert this signal to transfer a data value to the SIMON core
-    //.data_i		   (),    		    // INPUT: SIMON data input
-    .data_valid_o	   (),       	            // OUTPUT: this signal is asserted to indicate that an output valid is available
-    .data_o		   (),    		    // OUTPUT: SIMON core data output
-    //.ready_o   		   ()
   );
 
   ibex_se_alu #(
