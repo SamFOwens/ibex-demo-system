@@ -49,12 +49,12 @@ module ibex_decrypt (
   logic [31:0] simon_a_out;
   logic [31:0] simon_b_out;
   logic [31:0] alu_out;
-  logic [1:0] internal_se_alu_imd_val_we; // Keeps track of whether the ALU is done with its operation
+  logic [1:0]  internal_se_alu_imd_val_we; // Keeps track of whether the ALU is done with its operation
   
   assign se_alu_operand_b_i = is_immediate ? operand_b_i :
   assign simon_a_data_i = dec_finished ? se_result_o : operand_a_i;
 
-  assign se_imd_val_we_o = {~dec_finished, ~enc_finished} | internal_se_alu_imd_val_we; // Keeps track of whether either Keyexpand is done or the appropriate decrypt + alu op combo is done (I think this works when dec and enc_finished are implemented)
+ // assign se_imd_val_we_o = {~dec_finished, ~enc_finished} | internal_se_alu_imd_val_we; // Keeps track of whether either Keyexpand is done or the appropriate decrypt + alu op combo is done (I think this works when dec and enc_finished are implemented)
   
   // latch intermediate dec and enc values, and alu output when ready (simon_a_out, simon_b_out, alu_out)
   se_imd_val_d_o = '{simon_a_out, simon_b_out};
@@ -65,20 +65,27 @@ module ibex_decrypt (
   
   logic [1:0] wrapper_state;
   
+  // State Machine Managing Decryption/ALU/Encryption
+  
   always_ff @(posedge clk_i or negedge rst_ni) begin
-    if (!rst_ni) begin
+    if (!rst_ni) begin 				// Reset
       wrapper_state = 2'b00;
-    end else if (wrapper_state = 2'b11) begin
-      wrapper_state = 2'b00; // idk if smth more useful could be done here
-    end else if (instr_first_cycle_i) begin
-      wrapper_state = 2'b00;
+    end else if (wrapper_state = 2'b00) begin   // First cycle
       se_imd_val_we_o = 2'b11;
-    end else if (dec_finished) begin
       wrapper_state = 2'b01;
-    end else if (dec_finished && ~(|internal_se_alu_imd_val_we)) begin
-      wrapper_state = 2'b10;
-    end else if (dec_finished && enc_finished) begin
-      wrapper_state = 2'b11;
+    end else if (wrapper_state == 2'b01) begin  // Decryption
+      if (dec_finished) begin
+      	wrapper_state = 2'b10;
+      end
+    end else if (wrapper_state == 2'b10) begin  // ALU operation
+      if (se_imd_val_we_o == 2'b00) begin
+      	wrapper_state = 2'b11;
+      end
+    end else if (wrapper_state == 2'b11) begin  // Ecryption
+      if (enc_finished) begin
+      	wrapper_state = 2'b00;
+      	se_imd_val_we_o = 2'b00;
+      end
     end else 
     end
   end
