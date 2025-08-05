@@ -271,6 +271,9 @@ module ibex_core import ibex_pkg::*; #(
 
   logic [31:0] alu_adder_result_ex;    // Used to forward computed address to LSU
   logic [31:0] result_ex;
+  
+  logic use_se_alu;
+  logic op_b_is_imm;
 
   // Multiplier Control
   logic        mult_en_ex;
@@ -597,6 +600,8 @@ module ibex_core import ibex_pkg::*; #(
     .alu_operator_ex_o (alu_operator_ex),
     .alu_operand_a_ex_o(alu_operand_a_ex),
     .alu_operand_b_ex_o(alu_operand_b_ex),
+    .use_se_alu_o	    (use_se_alu),     // Tells EX stage whether to use SE ALU
+    .op_b_is_imm_o	    (op_b_is_imm),    // Tells decrypt module whether to decrypt op B
 
     .imd_val_q_ex_o (imd_val_q_ex),
     .imd_val_d_ex_i (imd_val_d_ex),
@@ -722,6 +727,8 @@ module ibex_core import ibex_pkg::*; #(
     .alu_operand_a_i        (alu_operand_a_ex),
     .alu_operand_b_i        (alu_operand_b_ex),
     .alu_instr_first_cycle_i(instr_first_cycle_id),
+    .use_se_alu_i	    (use_se_alu),     // Tells EX stage whether to use SE ALU
+    .op_b_is_imm_i	    (op_b_is_imm),    // Tells decrypt module whether to decrypt op B
 
     // Branch target ALU signal from ID stage
     .bt_a_operand_i(bt_a_operand),

@@ -71,7 +71,7 @@ module ibex_decoder #(
                                                       // immediate
   output logic                 alu_multicycle_o,      // ternary bitmanip instruction
   
-  output logic                 use_se_alu,      // chooses between se and normal alu
+  output logic                 use_se_alu_o,      // chooses between se and normal alu
 
   // MULT & DIV
   output logic                 mult_en_o,             // perform integer multiplication
@@ -764,7 +764,7 @@ module ibex_decoder #(
 
     opcode_alu         = opcode_e'(instr_alu[6:0]);
     
-    use_se_alu   = 1'b0;
+    use_se_alu_o   = 1'b0;
 
 
     use_rs3_d          = 1'b0;
@@ -889,7 +889,7 @@ module ibex_decoder #(
         alu_op_a_mux_sel_o  = OP_A_REG_A;
         alu_op_b_mux_sel_o  = OP_B_IMM;
         imm_b_mux_sel_o     = IMM_B_I;
-        use_se_alu          =  1'b1;
+        use_se_alu_o          =  1'b1;
         alu_multicycle_o    =  1'b1;
 
         unique case (instr_alu[14:12])
@@ -922,7 +922,7 @@ module ibex_decoder #(
       OPCODE_SE_CMOV: begin
         alu_op_a_mux_sel_o = OP_A_REG_A;
         alu_op_b_mux_sel_o = OP_B_REG_B;
-        use_se_alu         = 1'b1;
+        use_se_alu_o         = 1'b1;
 
         if ({instr_alu[26:25],instr_alu[14:12]} == {2'b11, 3'b101}) begin
           alu_operator_o   = ENC_CMOV;
@@ -938,7 +938,7 @@ module ibex_decoder #(
       OPCODE_SE_OP: begin
         alu_op_a_mux_sel_o = OP_A_REG_A;
         alu_op_b_mux_sel_o = OP_B_REG_B;
-        use_se_alu         = 1'b1;
+        use_se_alu_o         = 1'b1;
         alu_multicycle_o   = 1'b1;
 
          unique case ({instr_alu[31:25], instr_alu[14:12]})
@@ -960,7 +960,7 @@ module ibex_decoder #(
 
         OPCODE_SE_KEYEXPAND: begin // Key Expand Op for Decrypt Module
           // No args
-          use_se_alu         = 1'b1; // Has to be sent to the SE Decrypt Module which essentially wraps the SE ALU
+          use_se_alu_o         = 1'b1; // Has to be sent to the SE Decrypt Module which essentially wraps the SE ALU
           alu_multicycle_o   = 1'b1; // Multicycle for pipelined implementation
           alu_operator_o = ENC_KEYEXPAND; // Key Expand Op, doesn't actually get sent to the ALU, it's intercepted by the Decrypt Module
         end

@@ -21,7 +21,8 @@ module ibex_ex_block #(
   input  logic [31:0]           alu_operand_a_i,
   input  logic [31:0]           alu_operand_b_i,
   input  logic                  alu_instr_first_cycle_i,
-  input  logic                  use_se_alu,      // ALU selector
+  input  logic                  use_se_alu_i,      // ALU selector
+  input  logic			op_b_is_imm_i,   // Tells decrypt module whether to decrypt op B
 
   // Branch Target ALU
   // All of these signals are unusued when BranchTargetALU == 0
@@ -91,14 +92,14 @@ module ibex_ex_block #(
 
   // Assign EX stage signals to appropriate ALU or SE signals
 
-  assign alu_imd_val_we         = use_se_alu ? se_alu_imd_val_we : norm_alu_imd_val_we;
-  assign alu_imd_val_d[0]       = use_se_alu ? se_alu_imd_val_d[0] : norm_alu_imd_val_d[0];
-  assign alu_imd_val_d[1]       = use_se_alu ? se_alu_imd_val_d[1] : norm_alu_imd_val_d[1];
-  assign alu_adder_result_ex_o  = use_se_alu ? se_alu_adder_result_ex_o : norm_alu_adder_result_ex_o;
-  assign alu_adder_result_ext   = use_se_alu ? se_alu_adder_result_ext : norm_alu_adder_result_ext;
-  assign alu_result             = use_se_alu ? se_alu_result : norm_alu_result;
-  assign alu_cmp_result         = use_se_alu ? se_alu_cmp_result : norm_alu_cmp_result;
-  assign alu_is_equal_result    = use_se_alu ? se_alu_is_equal_result : norm_alu_is_equal_result;
+  assign alu_imd_val_we         = use_se_alu_i ? se_alu_imd_val_we : norm_alu_imd_val_we;
+  assign alu_imd_val_d[0]       = use_se_alu_i ? se_alu_imd_val_d[0] : norm_alu_imd_val_d[0];
+  assign alu_imd_val_d[1]       = use_se_alu_i ? se_alu_imd_val_d[1] : norm_alu_imd_val_d[1];
+  assign alu_adder_result_ex_o  = use_se_alu_i ? se_alu_adder_result_ex_o : norm_alu_adder_result_ex_o;
+  assign alu_adder_result_ext   = use_se_alu_i ? se_alu_adder_result_ext : norm_alu_adder_result_ext;
+  assign alu_result             = use_se_alu_i ? se_alu_result : norm_alu_result;
+  assign alu_cmp_result         = use_se_alu_i ? se_alu_cmp_result : norm_alu_cmp_result;
+  assign alu_is_equal_result    = use_se_alu_i ? se_alu_is_equal_result : norm_alu_is_equal_result;
 
   /*
     The multdiv_i output is never selected if RV32M=RV32MNone
@@ -163,12 +164,13 @@ module ibex_ex_block #(
     .se_result_o           (se_alu_result),
     .se_comparison_result_o(se_alu_cmp_result),
     .se_is_equal_result_o  (se_alu_is_equal_result),
+    .op_b_is_imm_i	   (op_b_is_imm_i)
     .clk_i		   (clk_i),                      // system clock signal
     .rst_ni		   (rst_ni),                      // system reset signal, asserted high
     //.op_i		   (),                      // INPUT: crypto operation to execute
     //.key_valid_i	   (),          	    // INPUT: assert this signal to transfer a key value to the SIMON core
     //.key_i		   (), 		       	    // INPUT: SIMON key to expand
-    //.data_valid_i	   (use_se_alu),      	            // INPUT: assert this signal to transfer a data value to the SIMON core
+    //.data_valid_i	   (use_se_alu_i),      	            // INPUT: assert this signal to transfer a data value to the SIMON core
     //.data_i		   (),    		    // INPUT: SIMON data input
     .data_valid_o	   (),       	            // OUTPUT: this signal is asserted to indicate that an output valid is available
     .data_o		   (),    		    // OUTPUT: SIMON core data output
