@@ -61,7 +61,7 @@ module ibex_decrypt (
         if (simon_a_ready && simon_b_ready) begin
           simon_a_data = operand_a_i;
           wrapper_state = 2'b01;
-          op_a = SIMON_ENCRYPT;
+          op_a = SIMON_DECRYPT;
           data_valid_a = 1'b1;
           if (~op_b_is_imm) begin
       	    simon_b_data = operand_b_i;
@@ -92,11 +92,16 @@ module ibex_decrypt (
     end else if (wrapper_state == 2'b10) begin  // ALU operation
       if (internal_se_alu_imd_val_we == 2'b00) begin
       	wrapper_state = 2'b11;
+      	op_a = SIMON_ENCRYPT;
+      	simon_a_data = alu_out;
+      	data_valid_a = 1'b1;
       end
-    end else if (wrapper_state == 2'b11) begin  // Ecryption
-      if (enc_finished) begin
+    end else if (wrapper_state == 2'b11) begin  // Encryption
+      data_valid_a = 1'b0;
+      if (simon_a_out_ready) begin
       	wrapper_state = 2'b00;
       	se_imd_val_we_o = 2'b00;
+      	se_result_o = simon_a_out;
       end
     end else 
     end
@@ -119,7 +124,7 @@ module ibex_decrypt (
     .multdiv_sel_i         (multdiv_sel_i),
     .se_adder_result_o     (se_adder_result_o),
     .se_adder_result_ext_o (se_adder_result_ext_o),
-    .se_result_o           (se_result_o),
+    .se_result_o           (alu_out),
     .se_comparison_result_o(se_comparison_result_o),
     .se_is_equal_result_o  (se_is_equal_result_o)
   );
