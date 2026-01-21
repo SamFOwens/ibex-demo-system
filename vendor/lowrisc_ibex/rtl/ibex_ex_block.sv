@@ -165,11 +165,11 @@ module ibex_ex_block #(
     .se_result_o           (se_alu_result),
     .se_comparison_result_o(se_alu_cmp_result),
     .se_is_equal_result_o  (se_alu_is_equal_result),
-    .op_b_is_imm_i	   (op_b_is_imm_i)
+    .op_b_is_imm_i	   (op_b_is_imm_i),
     .clk_i		   (clk_i),                      // system clock signal
-    .rst_ni		   (rst_ni),                      // system reset signal, asserted high
+    .rst_ni		   (rst_ni)                      // system reset signal, asserted high
   );
-
+/*
   ibex_se_alu #(
     .RV32B(RV32B)
   ) se_alu_i (
@@ -189,7 +189,7 @@ module ibex_ex_block #(
     .se_comparison_result_o(se_alu_cmp_result),
     .se_is_equal_result_o  (se_alu_is_equal_result)
   );
-
+*/
   /////////
   // ALU //
   /////////

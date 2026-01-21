@@ -11,7 +11,7 @@
 // SIMON_CORE: This is a test driver module used by tb_simon_core.cpp
 //
 module simon_core #(
-   parameter int unsigned SIMON_KEY_W,            // SIMON key size (in bits), 64 and 128-bits are supported
+   //parameter int unsigned SIMON_KEY_W,            // SIMON key size (in bits), 64 and 128-bits are supported
    parameter int unsigned SIMON_DATA_W,           // SIMON data size (in bits), 32, 64, and 128-bits are supported
    parameter bit [6:0] SIMON_ROUNDS,              // SIMON rounds to execute during encryption/decryption
    parameter bit [6:0] SIMON_ROUNDS_PER_CYCLE     // SIMON rounds to execute each cycle, leading to pipelined implementations
@@ -19,8 +19,8 @@ module simon_core #(
     input  logic        clk,                      // system clock signal
     input  logic        rst,                      // system reset signal, asserted high
     input  ibex_pkg::simon_op_e   op_i,                     // INPUT: crypto operation to execute
-    input  logic        key_valid_i,              // INPUT: assert this signal to transfer a key value to the SIMON core
-    input  logic [7:0]  key_i [0:(SIMON_KEY_W/8)-1], // INPUT: SIMON key to expand
+    //input  logic        key_valid_i,              // INPUT: assert this signal to transfer a key value to the SIMON core
+    //input  logic [7:0]  key_i [0:(SIMON_KEY_W/8)-1], // INPUT: SIMON key to expand
     input  logic        data_valid_i,             // INPUT: assert this signal to transfer a data value to the SIMON core
     input  logic [SIMON_DATA_W-1:0] data_i,       // INPUT: SIMON data input
     output logic        data_valid_o,             // OUTPUT: this signal is asserted to indicate that an output valid is available
@@ -29,10 +29,11 @@ module simon_core #(
 
 );
   import ibex_pkg::*;
-
-  logic [(SIMON_DATA_W/2)-1:0] keytab[0:SIMON_ROUNDS - 1];
-  logic keytab_valid_o, enc_valid_o, dec_valid_o;
-  logic keyexpand_ready_o, enc_ready_o, dec_ready_o;
+  // [(SIMON_DATA_W/2)-1:0] keytab[0:SIMON_ROUNDS - 1]
+  localparam logic [15:0] keytab[0:31] = '{16'h0100,16'h0908,16'h1110,16'h1918,16'h71c3,16'hb649,16'h56d4,16'he070,16'hf15a,16'hc535,16'hdd94,16'h4010,16'h250a,16'h6f66,16'he96b,16'h4bd8,16'h0fe5,16'h7c47,16'he0ef,16'h3e21,16'h065b,16'h438c,16'hf26a,16'hb5c0,16'h8609,16'h9f8e,16'hd8bf,16'h09ac,16'he812,16'h2710,16'h2caa,16'h8d14}; // Full 32-Round Keytab
+  // localparam logic [15:0] keytab[0:1] = '{16'h1918,16'h1110}; // Setup for only 2 rounds
+  logic enc_valid_o, dec_valid_o;
+  logic enc_ready_o, dec_ready_o;
   logic [SIMON_DATA_W-1:0] enc_data_o;
   logic [SIMON_DATA_W-1:0] dec_data_o;
 

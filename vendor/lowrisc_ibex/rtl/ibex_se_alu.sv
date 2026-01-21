@@ -1213,16 +1213,6 @@ module ibex_se_alu #(
           end
         end
 
-        ALU_CMIX: begin
-          multicycle_result = imd_val_q_i[0] | bwlogic_and_result;
-          se_imd_val_d_o = '{bwlogic_and_result, 32'h0};
-          if (instr_first_cycle_i) begin
-            se_imd_val_we_o = 2'b01;
-          end else begin
-            se_imd_val_we_o = 2'b00;
-          end
-        end
-
         ALU_FSR, ALU_FSL,
         ALU_ROL, ALU_ROR: begin
           if (shift_amt[4:0] == 5'h0) begin
@@ -1332,9 +1322,7 @@ module ibex_se_alu #(
 
       // Shift Operations
       ENC_SLL,  ENC_SRL,
-      ENC_SRA,
-      // RV32B
-      ALU_SLO,  ALU_SRO: se_result_o = shift_result;
+      ENC_SRA: se_result_o = shift_result;
 
       // Shuffle Operations (RV32B)
       ALU_SHFL, ALU_UNSHFL: se_result_o = shuffle_result;
@@ -1364,7 +1352,7 @@ module ibex_se_alu #(
       ALU_SEXTB, ALU_SEXTH: se_result_o = sext_result;
 
       // Ternary Bitmanip Operations (RV32B)
-      ALU_CMIX, ENC_CMOV,
+      ENC_CMOV,
       ALU_FSL,  ALU_FSR,
       // Rotate Shift (RV32B)
       ALU_ROL, ALU_ROR,

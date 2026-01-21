@@ -1,7 +1,9 @@
-module ibex_decrypt (
+module ibex_decrypt #(
+  parameter ibex_pkg::rv32b_e RV32B = ibex_pkg::RV32BNone
+) (
 	
   // SE ALU Signals
-  input logic use_se_alu,
+  input logic use_se_alu_i,
   input  ibex_pkg::alu_op_e operator_i,
   input  logic [31:0]       operand_a_i,
   input  logic [31:0]       operand_b_i,
@@ -24,86 +26,103 @@ module ibex_decrypt (
   output logic              se_comparison_result_o,
   output logic              se_is_equal_result_o,
   
-  input logic		    op_b_is_imm, // tells module if operand_b is an immediate value
+  input logic		    op_b_is_imm_i, // tells module if operand_b is an immediate value
   
   // Simon Core Signals 
   
   input  logic        clk_i,                      // system clock signal
-  input  logic        rst_ni,                      // system reset signal, asserted high
+  input  logic        rst_ni                      // system reset signal, asserted high
 );
   import ibex_pkg::*;
   
   // Overall Signals
 
-  logic dec_finished, enc_finished;
+  //logic dec_finished, enc_finished;
+  logic simon_a_out_ready, simon_b_out_ready;
   logic [31:0] simon_a_data, simon_b_data;
   simon_op_e   op_a, op_b;
   logic simon_a_ready, simon_b_ready;
   logic simon_a_done, simon_b_done;
+  logic se_alu_instr_first_cycle;
   logic data_valid_a, data_valid_b;
-  logic [31:0] se_alu_operand_b;
+  logic [31:0] se_alu_operand_a, se_alu_operand_b;
   logic [31:0] simon_a_out, simon_b_out, alu_out;
   logic [1:0]  internal_se_alu_imd_val_we; // Keeps track of whether the ALU is done with its operation
+  logic [1:0] se_imd_val_we_first_cycle, sm_se_imd_val_we_o;
   
-  // latch intermediate dec and enc values, and alu output when ready (simon_a_out, simon_b_out, alu_out)
-  se_imd_val_d_o = '{simon_a_out, simon_b_out};
+  // latch intermediate dec and enc values, and alu output when ready (simon_a_out, simon_b_out, alu_out), not sure if quite right, doesnt store alu output and is a little weird
+  assign se_imd_val_d_o = '{simon_a_out, simon_b_out};
   
   logic [1:0] wrapper_state;
   
+  
   // State Machine Managing Decryption/ALU/Encryption
+  
+  always_comb begin
+    se_imd_val_we_first_cycle = 2'b00;
+    se_imd_val_we_o = 2'b00;
+    if (use_se_alu_i && instr_first_cycle_i) begin
+      se_imd_val_we_first_cycle = 2'b11;
+    end
+    if ((|se_imd_val_we_first_cycle) || (|sm_se_imd_val_we_o)) begin
+      se_imd_val_we_o = 2'b11;
+    end
+  end
   
   always_ff @(posedge clk_i or negedge rst_ni) begin
     if (!rst_ni) begin 				// Reset
-      wrapper_state = 2'b00;
-    end else if (wrapper_state = 2'b00) begin   // First cycle
-      if (use_se_alu) begin
-        se_imd_val_we_o = 2'b11;
+      wrapper_state <= 2'b00;
+    end else if (wrapper_state == 2'b00) begin   // First cycle
+      if (use_se_alu_i) begin
+        sm_se_imd_val_we_o <= 2'b11;
         if (simon_a_ready && simon_b_ready) begin
-          simon_a_data = operand_a_i;
-          wrapper_state = 2'b01;
-          op_a = SIMON_DECRYPT;
-          data_valid_a = 1'b1;
-          if (~op_b_is_imm) begin
-      	    simon_b_data = operand_b_i;
-      	    op_b = SIMON_DECRYPT;
-      	    data_valid_b = 1'b1;
+          simon_a_data <= operand_a_i;
+          wrapper_state <= 2'b01;
+          op_a <= SIMON_DECRYPT;
+          data_valid_a <= 1'b1;
+          if (~op_b_is_imm_i) begin
+      	    simon_b_data <= operand_b_i;
+      	    op_b <= SIMON_DECRYPT;
+      	    data_valid_b <= 1'b1;
       	  end
         end
       end
     end else if (wrapper_state == 2'b01) begin  // Decryption
-      data_valid_a = 1'b0;
-      data_valid_b = 1'b0;
+      data_valid_a <= 1'b0;
+      data_valid_b <= 1'b0;
       if (simon_a_out_ready) begin
-        simon_a_done = 1'b1;
+        simon_a_done <= 1'b1;
       end
       if (simon_b_out_ready) begin
-        simon_b_done = 1'b1;
+        simon_b_done <= 1'b1;
       end
-      if (simon_a_done && (op_b_is_imm || simon_b_done)) begin
-      	wrapper_state = 2'b10;
-      	simon_a_done = 1'b0;
-      	simon_b_done = 1'b0;
-      	if (~op_b_is_imm) begin
-      	  se_alu_operand_b = simon_b_out;
+      if (simon_a_done && (op_b_is_imm_i || simon_b_done)) begin
+      	wrapper_state <= 2'b10;
+      	simon_a_done <= 1'b0;
+      	simon_b_done <= 1'b0;
+      	se_alu_operand_a <= simon_a_out;
+      	if (~op_b_is_imm_i) begin
+      	  se_alu_operand_b <= simon_b_out;
       	end else begin
-      	  se_alu_operand_b = operand_b_i;
+      	  se_alu_operand_b <= operand_b_i;
+      	  se_alu_instr_first_cycle <= 1'b1;
       	end
       end
-    end else if (wrapper_state == 2'b10) begin  // ALU operation
+    end else if (wrapper_state == 2'b10) begin  // ALU operation, Might need to add intermediate value latching
       if (internal_se_alu_imd_val_we == 2'b00) begin
-      	wrapper_state = 2'b11;
-      	op_a = SIMON_ENCRYPT;
-      	simon_a_data = alu_out;
-      	data_valid_a = 1'b1;
+      	wrapper_state <= 2'b11;
+      	op_a <= SIMON_ENCRYPT;
+      	simon_a_data <= alu_out;
+      	data_valid_a <= 1'b1;
       end
     end else if (wrapper_state == 2'b11) begin  // Encryption
-      data_valid_a = 1'b0;
+      data_valid_a <= 1'b0;
       if (simon_a_out_ready) begin
-      	wrapper_state = 2'b00;
-      	se_imd_val_we_o = 2'b00;
-      	se_result_o = simon_a_out;
+      	wrapper_state <= 2'b00;
+      	sm_se_imd_val_we_o <= 2'b00;
+      	se_result_o <= simon_a_out;
       end
-    end else 
+    end else begin
     end
   end
 
@@ -113,9 +132,9 @@ module ibex_decrypt (
     .RV32B(RV32B)
   ) se_alu_i (
     .operator_i            (operator_i),
-    .operand_a_i           (operand_a_i),
+    .operand_a_i           (se_alu_operand_a),
     .operand_b_i           (se_alu_operand_b),
-    .instr_first_cycle_i   (instr_first_cycle_i),
+    .instr_first_cycle_i   (se_alu_instr_first_cycle),
     .imd_val_q_i           (imd_val_q_i),
     .se_imd_val_we_o       (internal_se_alu_imd_val_we),
     .se_imd_val_d_o        (se_imd_val_d_o),
@@ -132,10 +151,10 @@ module ibex_decrypt (
   // Simon Core Instantiation
 
   simon_core #(
-    .SIMON_KEY_W(64),
+    //.SIMON_KEY_W(64),
     .SIMON_DATA_W(32),
-    .SIMON_ROUNDS(7'b0000001),
-    .SIMON_ROUNDS_PER_CYCLE(7'b0000001);
+    .SIMON_ROUNDS(7'b0100000),
+    .SIMON_ROUNDS_PER_CYCLE(7'b0000010)
   ) simon_one_i (
     .clk		   (clk_i),                      // system clock signal
     .rst		   (~rst_ni),                      // system reset signal, asserted high
@@ -148,10 +167,10 @@ module ibex_decrypt (
   );
   
   simon_core #(
-    .SIMON_KEY_W(64),
+    //.SIMON_KEY_W(64),
     .SIMON_DATA_W(32),
     .SIMON_ROUNDS(7'b0100000),
-    .SIMON_ROUNDS_PER_CYCLE(7'b0000001);
+    .SIMON_ROUNDS_PER_CYCLE(7'b0000010)
   ) simon_two_i (
     .clk		   (clk_i),                      // system clock signal
     .rst		   (~rst_ni),                      // system reset signal, asserted high

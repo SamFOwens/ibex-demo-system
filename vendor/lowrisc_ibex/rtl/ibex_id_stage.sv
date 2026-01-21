@@ -864,6 +864,7 @@ module ibex_id_stage #(
             stall_multdiv   = multdiv_en_dec;
             stall_branch    = branch_in_dec;
             stall_jump      = jump_in_dec;
+            stall_alu       = alu_multicycle_dec;
           end
         end
 
