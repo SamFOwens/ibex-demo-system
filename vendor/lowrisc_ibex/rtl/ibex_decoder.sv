@@ -893,24 +893,24 @@ module ibex_decoder #(
         alu_multicycle_o    =  1'b1;
 
         unique case (instr_alu[14:12])
-          3'b000: alu_operator_o = ENC_ADD;  // Add Immediate
-          3'b010: alu_operator_o = ENC_SLT;  // Set to one if Lower than Immediate
-          3'b011: alu_operator_o = ENC_SLTU; // Set to one if Lower than Immediate Unsigned
-          3'b100: alu_operator_o = ENC_XOR;  // Exclusive Or with Immediate
-          3'b110: alu_operator_o = ENC_OR;   // Or with Immediate
-          3'b111: alu_operator_o = ENC_AND;  // And with Immediate
+          3'b000: alu_operator_o = alu_op_e'(ENC_ADD);  // Add Immediate
+          3'b010: alu_operator_o = alu_op_e'(ENC_SLT);  // Set to one if Lower than Immediate
+          3'b011: alu_operator_o = alu_op_e'(ENC_SLTU); // Set to one if Lower than Immediate Unsigned
+          3'b100: alu_operator_o = alu_op_e'(ENC_XOR);  // Exclusive Or with Immediate
+          3'b110: alu_operator_o = alu_op_e'(ENC_OR);   // Or with Immediate
+          3'b111: alu_operator_o = alu_op_e'(ENC_AND);  // And with Immediate
 
           3'b001: begin
             if (instr_alu[31:25] == 7'b000_0000) begin
-              alu_operator_o = ENC_SLL;
+              alu_operator_o = alu_op_e'(ENC_SLL);
             end
           end
 
           3'b101: begin
             if (instr_alu[31:25] == 7'b000_0000) begin
-              alu_operator_o = ENC_SRL;
+              alu_operator_o = alu_op_e'(ENC_SRL);
             end else if (instr_alu[31:25] == 7'b010_0000) begin
-              alu_operator_o = ENC_SRA;
+              alu_operator_o = alu_op_e'(ENC_SRA);
             end
           end
 
@@ -925,7 +925,7 @@ module ibex_decoder #(
         use_se_alu_o         = 1'b1;
 
         if ({instr_alu[26:25],instr_alu[14:12]} == {2'b11, 3'b101}) begin
-          alu_operator_o   = ENC_CMOV;
+          alu_operator_o   = alu_op_e'(ENC_CMOV);
           alu_multicycle_o = 1'b1;
           if (instr_first_cycle_i) begin
             use_rs3_d = 1'b1;
@@ -943,16 +943,16 @@ module ibex_decoder #(
 
          unique case ({instr_alu[31:25], instr_alu[14:12]})
             // RV32I ALU operations
-            {7'b000_0000, 3'b000}: alu_operator_o = ENC_ADD;   // Add
-            {7'b010_0000, 3'b000}: alu_operator_o = ENC_SUB;   // Sub
-            {7'b000_0000, 3'b010}: alu_operator_o = ENC_SLT;   // Set Lower Than
-            {7'b000_0000, 3'b011}: alu_operator_o = ENC_SLTU;  // Set Lower Than Unsigned
-            {7'b000_0000, 3'b100}: alu_operator_o = ENC_XOR;   // Xor
-            {7'b000_0000, 3'b110}: alu_operator_o = ENC_OR;    // Or
-            {7'b000_0000, 3'b111}: alu_operator_o = ENC_AND;   // And
-            {7'b000_0000, 3'b001}: alu_operator_o = ENC_SLL;   // Shift Left Logical
-            {7'b000_0000, 3'b101}: alu_operator_o = ENC_SRL;   // Shift Right Logical
-            {7'b010_0000, 3'b101}: alu_operator_o = ENC_SRA;   // Shift Right Arithmetic
+            {7'b000_0000, 3'b000}: alu_operator_o = alu_op_e'(ENC_ADD);   // Add
+            {7'b010_0000, 3'b000}: alu_operator_o = alu_op_e'(ENC_SUB);   // Sub
+            {7'b000_0000, 3'b010}: alu_operator_o = alu_op_e'(ENC_SLT);   // Set Lower Than
+            {7'b000_0000, 3'b011}: alu_operator_o = alu_op_e'(ENC_SLTU);  // Set Lower Than Unsigned
+            {7'b000_0000, 3'b100}: alu_operator_o = alu_op_e'(ENC_XOR);   // Xor
+            {7'b000_0000, 3'b110}: alu_operator_o = alu_op_e'(ENC_OR);    // Or
+            {7'b000_0000, 3'b111}: alu_operator_o = alu_op_e'(ENC_AND);   // And
+            {7'b000_0000, 3'b001}: alu_operator_o = alu_op_e'(ENC_SLL);   // Shift Left Logical
+            {7'b000_0000, 3'b101}: alu_operator_o = alu_op_e'(ENC_SRL);   // Shift Right Logical
+            {7'b010_0000, 3'b101}: alu_operator_o = alu_op_e'(ENC_SRA);   // Shift Right Arithmetic
 
             default: ;
           endcase
@@ -962,7 +962,7 @@ module ibex_decoder #(
           // No args
           use_se_alu_o         = 1'b1; // Has to be sent to the SE Decrypt Module which essentially wraps the SE ALU
           alu_multicycle_o   = 1'b1; // Multicycle for pipelined implementation
-          alu_operator_o = ENC_KEYEXPAND; // Key Expand Op, doesn't actually get sent to the ALU, it's intercepted by the Decrypt Module
+          alu_operator_o = alu_op_e'(ENC_KEYEXPAND); // Key Expand Op, doesn't actually get sent to the ALU, it's intercepted by the Decrypt Module, not currently in use
         end
 
       /////////
