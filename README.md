@@ -1,4 +1,4 @@
-#SE Extension
+# SE Extension
 
 The SE Branch includes ISA extensions and an additional Sequestered Encryption hardware unit to allow for data encryption, and manipulation of encrypted data only within the SE unit.
 
