@@ -150,6 +150,7 @@ module ibex_decrypt #(
   
   // Simon Core Instantiation
 
+  // Simon A
   simon_core #(
     //.SIMON_KEY_W(64),
     .SIMON_DATA_W(32),
@@ -166,6 +167,7 @@ module ibex_decrypt #(
     .ready_o   		   (simon_a_ready)
   );
   
+  // Simon B
   simon_core #(
     //.SIMON_KEY_W(64),
     .SIMON_DATA_W(32),
