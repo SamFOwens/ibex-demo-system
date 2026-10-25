@@ -1,0 +1,35 @@
+//This command lets vivado run from the console:
+//Maybe run in directory where project(s) are, as it will be vivado's default dir to look for and save projects, but it will also be where vivado puts the logs:
+source /tools/Xilinx/Vivado/2023.2/settings64.sh && vivado
+
+//Simulation (Run from Repo Root):
+fusesoc --cores-root=. run --target=sim --tool=verilator --setup --build lowrisc:ibex:demo_system
+
+./build/lowrisc_ibex_demo_system_0/sim-verilator/Vtop_verilator -t --meminit=ram,./sw/c/build/demo/encrypted_test/enctestmod
+
+// After running, the UART log will be written to uart0.log
+// After running, sim.fst will have the traces, and those can be viewed with:
+gtkwave sim.fst
+
+// Most of the interesting signals are under TOP/top_verilator/u_ibex_demo_system/u_top/u_ibex_core/whatever_stage
+
+
+
+
+
+
+
+
+
+
+//Synthesis (Run from Repo Root):
+fusesoc --cores-root=. run --target=synth --setup --build lowrisc:ibex:demo_system
+
+fusesoc --cores-root=. run --target=synth --run lowrisc:ibex:demo_system
+
+//Target Choices:
+--target=synth should be a7-100t after my modifications? maybe double check, normally its 35t
+
+--target=synth_nexysa7 is the nexys a7 board
+
+
