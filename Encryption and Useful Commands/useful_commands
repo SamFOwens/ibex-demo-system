@@ -14,6 +14,11 @@ gtkwave sim.fst
 // Most of the interesting signals are under TOP/top_verilator/u_ibex_demo_system/u_top/u_ibex_core/whatever_stage
 
 
+riscv32-unknown-elf-objdump -d [elffile] > [destination dump]
+
+riscv32-unknown-elf-objdump -d demo > demo.dump
+
+g++ -o main.exe convert.cpp
 
 
 
@@ -32,4 +37,4 @@ fusesoc --cores-root=. run --target=synth --run lowrisc:ibex:demo_system
 
 --target=synth_nexysa7 is the nexys a7 board
 
-
+// OpenOCD

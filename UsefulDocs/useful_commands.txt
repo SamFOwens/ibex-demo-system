@@ -1,0 +1,109 @@
+//maybe run in directory where project(s) are, as it will be vivado's default dir to look for and save projects, but it will also always be where vivado puts the logs?:
+source /home/sam/Vivado/2024.1/settings64.sh
+vivado
+
+// Python venv nonsense:
+source qemu/bin/activate
+deactivate
+
+fusesoc --cores-root=. run --target=synth --setup lowrisc:ibex:demo_system
+
+fusesoc --cores-root=. run --target=synth --run lowrisc:ibex:demo_system
+
+# If the above does not work, try executing the programming operation manually with:
+make -C ./build/lowrisc_ibex_demo_system_0/synth-vivado/ pgm
+
+# Run demo
+./util/load_demo_system.sh run ./sw/c/build/demo/hello_world/demo
+./util/load_demo_system.sh run ./sw/c/build/demo/lcd_st7735/lcd_st7735
+
+# Load demo and start halted awaiting a debugger
+./util/load_demo_system.sh halt ./sw/c/build/demo/hello_world/demo
+
+# Look in /dev to see available ttyUSB devices
+screen /dev/ttyUSB1 115200
+
+
+
+
+git clone --recursive https://github.com/beehive-lab/mambo.git
+
+// Just wrong lmao:
+qemu-system-riscv64 -nographic -machine virt \
+     -kernel /home/sam/Downloads/linux-5.10.226/vmlinux -append "root=/dev/vda ro console=ttyS0" \
+     -drive file=busybox,format=raw,id=hd0 \
+     -device virtio-blk-device,drive=hd0
+     
+     cp -a Busybox/busybox-1.36.1/_install/* ./initramfs
+
+     
+// Riscv command framework:
+qemu-system-riscv64 -M virt -smp 4 -m 2G \
+    -display none -serial stdio \
+    -kernel /home/sam/Downloads/linux-5.10.226/arch/riscv/boot/Image \
+    -initrd /path/to/rootfs.cpio \
+    -append "root=/dev/ram"
+
+// Actual command:
+qemu-system-riscv64 -M virt -smp 4 -m 2G \
+    -display none -serial stdio \
+    -kernel /home/sam/Downloads/linux-5.10.226/arch/riscv/boot/Image \
+    -initrd /home/sam/Documents/initramfs.cpio.gz \
+    -append "root=/dev/ram"
+    
+    // x86 boot:
+    qemu-system-x86_64 -kernel bzImage \
+    -initrd initramfs.cpio.gz -nographic \
+    -append "console=ttyS0"
+    
+    //Busybox install:
+    
+    make ARCH=riscv CROSS_COMPILE=riscv64-unknown-linux-gnu- defconfig // menuconfig
+    make ARCH=riscv CROSS_COMPILE=riscv64-unknown-linux-gnu- -j $(nproc)
+    make ARCH=riscv CROSS_COMPILE=riscv64-unknown-linux-gnu- install
+    
+    // Initrd setup:
+    cp -a Busybox/busybox-1.36.1/_install/* ./initramfs
+    
+    */// why? (stupid text editor)
+    
+    // From initramfs (creating cpio archive):
+    find . -print0 | cpio --null -ov --format=newc | gzip -9 > ../initramfs.cpio.gz
+    
+    // Cross compile is important lmao
+    
+    // Actual command 32 bit riscv:
+qemu-system-riscv32 -M virt -smp 4 -m 2G \
+    -display none -serial stdio \
+    -kernel /home/sam/Documents/Linux/linux-5.10.226/arch/riscv/boot/Image \
+    -initrd /home/sam/Documents/initramfs.cpio.gz \
+    -append "root=/dev/ram"
+
+	sudo qemu-system-riscv32 -nographic -machine virt \
+     -kernel linux/arch/riscv/boot/Image -append "root=/dev/vda ro console=ttyS0" \
+     -drive file=busybox,format=raw,id=hd0 \
+     -device virtio-blk-device,drive=hd0
+    
+    wget https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.6.16.tar.xz
+    
+    ./configure --prefix=/home/sam/rv32tc --with-arch=rv32imac_zicsr_zifencei --with-abi=ilp32
+    
+    ./configure --prefix=/home/sam/rv32tc --with-arch=rv32gc --with-abi=ilp32d
+    
+    // New CMD:
+    // cpu-num should auto-set pc to the file address
+    // Make it have only 1 core smp
+    qemu-system-riscv32 -M virt -smp 1 -m 2G \
+    -display none -serial stdio \
+    -device loader,file=/home/sam/Documents/Elfs/demo,cpu-num=0
+    
+    qemu-system-x86_64 -M microvm -smp 1 -m 2G \
+    -display none -serial stdio \
+    -device loader,file=/home/sam/Documents/Elfs/plain,cpu-num=0
+    
+    qemu-system-riscv32 -M virt -smp 1 -m 2G \
+    -display none -serial stdio \
+    -kernel /home/sam/Documents/Elfs/demo
+    
+    riscv64-unknown-linux-gnu-gcc main.c -o demo
+

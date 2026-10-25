@@ -1,0 +1,48 @@
+hexval for encrypted value 351628088: 14F56B3B
+
+Little endian: 3B6BF514
+
+It's on line 152, opcode 00178713, line 157 in enctestops.dump, addi a4, a5, 1
+
+little endian opcode is 13871700, preceding opcode is 9c43 in little endian
+
+New opcode is 0b871700
+
+Previous UARTlog when operand_a failed to be updated after decryption:
+
+
+14F56B38
+073100F5
+Hello World! 00000001   Input Value: 00000000
+
+073100F5
+0A810528
+Hello World! 00000002   Input Value: 00000000
+
+0A810528
+E16B3737
+Hello World! 00000003   Input Value: 00000000
+
+E16B3737
+17C9E94E
+Hello World! 00000004   Input Value: 00000000
+
+17C9E94E
+DFDDA661
+Hello World! 00000005   Input Value: 00000000
+
+DFDDA661
+2A985D96
+Hello World! 00000006   Input Value: 00000000
+
+2A985D96
+0D29FECF
+Hello World! 00000007   Input Value: 00000000
+
+0D29FECF
+5553DB6C
+Hello World! 00000008   Input Value: 00000000
+
+5553DB6C
+38A0953C
+Hello World! 00000009   Input Value: 00000000
