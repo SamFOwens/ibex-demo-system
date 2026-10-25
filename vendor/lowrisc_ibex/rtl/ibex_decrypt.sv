@@ -155,7 +155,7 @@ module ibex_decrypt #(
     //.SIMON_KEY_W(64),
     .SIMON_DATA_W(32),
     .SIMON_ROUNDS(7'b0100000),
-    .SIMON_ROUNDS_PER_CYCLE(7'b0000010)
+    .SIMON_ROUNDS_PER_CYCLE(7'b0000001)
   ) simon_one_i (
     .clk		   (clk_i),                      // system clock signal
     .rst		   (~rst_ni),                      // system reset signal, asserted high
@@ -172,7 +172,7 @@ module ibex_decrypt #(
     //.SIMON_KEY_W(64),
     .SIMON_DATA_W(32),
     .SIMON_ROUNDS(7'b0100000),
-    .SIMON_ROUNDS_PER_CYCLE(7'b0000010)
+    .SIMON_ROUNDS_PER_CYCLE(7'b0000001)
   ) simon_two_i (
     .clk		   (clk_i),                      // system clock signal
     .rst		   (~rst_ni),                      // system reset signal, asserted high
