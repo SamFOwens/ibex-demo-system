@@ -23,7 +23,7 @@ void test_uart_irq_handler(void) {
   }
 }
 
-uint32_t testval = 351628088;
+uint32_t testval = 351628088; // This is 14F56B38 in hex, and unencrypted is 5782(dec)/1696(hex)
 
 int main(void) {
   install_exception_handler(UART_IRQ_NUM, &test_uart_irq_handler);
@@ -55,9 +55,9 @@ int main(void) {
       // happening in the middle
       set_global_interrupt_enable(0);
       putchar('\n');
-      puthex(testval);
+      puthex(testval); // 14F56B38
       putchar('\n');
-      testval = testval + 1;
+      testval = testval + 1; // Plus one should be 1998676427(dec)/772161CB(hex), aka encrypted 5783(decimal)/1697(hex)
       puthex(testval);
       putchar('\n');
 

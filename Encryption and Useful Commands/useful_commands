@@ -13,20 +13,6 @@ gtkwave sim.fst
 
 // Most of the interesting signals are under TOP/top_verilator/u_ibex_demo_system/u_top/u_ibex_core/whatever_stage
 
-
-riscv32-unknown-elf-objdump -d [elffile] > [destination dump]
-
-riscv32-unknown-elf-objdump -d demo > demo.dump
-
-g++ -o main.exe convert.cpp
-
-
-
-
-
-
-
-
 //Synthesis (Run from Repo Root):
 fusesoc --cores-root=. run --target=synth --setup --build lowrisc:ibex:demo_system
 
@@ -38,3 +24,37 @@ fusesoc --cores-root=. run --target=synth --run lowrisc:ibex:demo_system
 --target=synth_nexysa7 is the nexys a7 board
 
 // OpenOCD
+
+Debugging an application
+Either load an application and halt (see above) or start a new OpenOCD instance:
+
+openocd -f util/arty-a7-openocd-cfg.tcl
+
+
+
+Then run GDB against the running binary and connect to localhost:3333 as a remote target:
+
+riscv32-unknown-elf-gdb ./sw/c/build/demo/hello_world/demo
+
+(gdb) target extended-remote localhost:3333
+
+// Generally useful commands:
+
+riscv32-unknown-elf-objdump -d [elffile] > [destination dump] // dumps the code section from an elf to a dump
+
+riscv32-unknown-elf-objdump -d demo > demo.dump
+
+
+// SimonGeneral.cpp and generalsimon are what can decrypt/encrypt values quickly, when running generalsimon it will give instructions
+
+// Manually Modifying a Binary to add Encryption:
+
+Get enctest // or your chosen program
+riscv32-unknown-elf-objcopy enctest --dump-section .text=text.dump // Dumps the code section
+xxd -p text.dump > hex.txt // Gets the dump into just hex text which can be read and modified
+Make your modifications // The modifications I made to enctest are recorded in EncTestFilesandNotes
+./converter // This is in the HextoDumpConverter file, converting.cpp is the original code
+Copy the relevant section from text-mod.dump, w/o the extra around space at the end
+printf "[dump section here, dont include the brackets]" >> textfinal.dump
+riscv32-unknown-elf-objcopy enctest --update-section .text=textfinal.dump
+
